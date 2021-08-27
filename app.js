@@ -64,7 +64,7 @@ app.get("/", function (req, res) {
 });
 
 app.get("/:customToDO", function (req, res) {
-  const customToDOName = req.params.customToDO;
+  const customToDOName = _.capitalize(req.params.customToDO);
 
   List.findOne({ name: customToDOName }, function (err, foundList) {
     if (!err) {
@@ -110,12 +110,26 @@ app.post("/", function (req, res) {
 });
 
 app.post("/delete", function (req, res) {
-  Item.findByIdAndRemove(req.body.checkbox, function (err) {
-    if (!err) {
-      console.log(`Successfully Deleted ID ${req.body.checkbox}`);
-    }
-    res.redirect("/");
-  });
+  const listName = req.body.listName;
+
+  if (listName === "Today") {
+    Item.findByIdAndRemove(_.capitalize(req.body.checkbox), function (err) {
+      if (!err) {
+        console.log(`Successfully Deleted checked item.`);
+      }
+      res.redirect("/");
+    });
+  } else {
+    List.findOneAndUpdate(
+      { name: listName },
+      { $pull: { items: { _id: req.body.checkbox } } },
+      function (err, foundList) {
+        if (!err) {
+          res.redirect("/" + listName);
+        }
+      }
+    );
+  }
 });
 
 let port = process.env.PORT;
